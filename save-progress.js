@@ -10,6 +10,7 @@
     ).forEach(function (el) {
       const name = el.name || el.id;
       if (!name) return;
+      if (el.id === 'jd-save-email') return; // skip the save progress email field
       if (el.type === 'checkbox') {
         if (!data[name]) data[name] = [];
         if (el.checked) data[name].push(el.value);
@@ -69,19 +70,19 @@
     });
   }
 
+  // Simulate Formly next-button clicks to keep its internal state in sync
   function goToStep(targetIndex) {
-    const steps = document.querySelectorAll('[data-form="step"]');
-    if (!steps.length) return;
-    const index = Math.min(Math.max(targetIndex, 1), steps.length - 1);
-    steps.forEach(function (step) { step.style.display = 'none'; });
-    if (steps[index]) steps[index].style.display = '';
-    document.querySelectorAll('[data-text="current-step"]').forEach(function (el) {
-      el.textContent = index;
-    });
-    const progressBar = document.querySelector('[data-form="progress-indicator"]');
-    if (progressBar && steps.length > 1) {
-      progressBar.style.width = ((index) / (steps.length - 1) * 100) + '%';
-    }
+    var nextBtn = document.querySelector('[data-form="next-btn"]');
+    if (!nextBtn) return;
+    var clicks = 0;
+    var interval = setInterval(function () {
+      if (clicks >= targetIndex - 1) {
+        clearInterval(interval);
+        return;
+      }
+      nextBtn.click();
+      clicks++;
+    }, 80);
   }
 
   function showToast(message, type) {
@@ -144,29 +145,25 @@
         restoreFormData(result.formData);
         goToStep(result.currentStep);
         showToast('✓ Your progress has been restored. Carry on from where you left off.', 'success');
-      }, 600);
+      }, 800);
     } catch (err) {
       showToast('⚠ Unable to load your saved progress. Please try again.', 'error');
     }
   }
 
-  // Use event delegation on document — works regardless of when modal appears in DOM
   document.addEventListener('click', async function (e) {
-    // Save trigger links — open modal
     if (e.target.closest('[data-save-trigger]')) {
       e.preventDefault();
       openModal();
       return;
     }
 
-    // Cancel button or overlay — close modal
     if (e.target.closest('#jd-save-cancel') || e.target.id === 'jd-save-overlay') {
       e.preventDefault();
       closeModal();
       return;
     }
 
-    // Send button — intercept before form submits
     if (e.target.closest('#jd-save-send')) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -204,7 +201,7 @@
         showToast('⚠ ' + (err.message || 'Something went wrong. Please try again.'), 'error');
       }
     }
-  }, true); // capture:true — fires before Webflow's handlers
+  }, true);
 
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
