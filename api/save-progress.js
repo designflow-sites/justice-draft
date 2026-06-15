@@ -11,10 +11,6 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   const allowedOrigins = [
     'https://www.justice-draft.com',
     'https://justice-draft.webflow.io',
@@ -26,25 +22,25 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle preflight FIRST before any method checks
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Handle both JSON and URL-encoded form submissions
-  let email, formData, currentStep;
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
+  let email, formData, currentStep;
   const contentType = req.headers['content-type'] || '';
 
   if (contentType.includes('application/json')) {
-    // Called from our JS script
     ({ email, formData, currentStep } = req.body);
   } else if (contentType.includes('application/x-www-form-urlencoded')) {
-    // Called directly from Webflow form submission
     email = req.body['Save-Progress-Email'] || req.body['email'] || '';
-    formData = {}; // Webflow form won't have full form data — that's ok
+    formData = {};
     currentStep = 0;
   } else {
-    // Try to parse as JSON anyway
     try {
       ({ email, formData, currentStep } = req.body);
     } catch (e) {
@@ -125,7 +121,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Progress saved but email failed to send.' });
   }
 
-  // If it was a Webflow form submission, redirect to a success page or back
   if (contentType.includes('application/x-www-form-urlencoded')) {
     return res.redirect(302, 'https://justice-draft.webflow.io/start-your-statement?saved=true');
   }
