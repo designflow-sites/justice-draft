@@ -3,7 +3,7 @@
 
   const API_BASE = 'https://justice-draft-save-progress.vercel.app';
 
-  // ── Collect all form field values ─────────────────────────────────────────
+  // ── Collect all main form field values ────────────────────────────────────
   function collectFormData() {
     const data = {};
     document.querySelectorAll(
@@ -88,7 +88,7 @@
     }
   }
 
-  // ── Toast notification ────────────────────────────────────────────────────
+  // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(message, type) {
     const existing = document.getElementById('jd-toast');
     if (existing) existing.remove();
@@ -105,44 +105,34 @@
     }, 4000);
   }
 
-  // ── Open / close modal ────────────────────────────────────────────────────
+  // ── Modal open/close ──────────────────────────────────────────────────────
   function openModal() {
     var panel = document.getElementById('jd-save-panel');
-    if (panel) {
-      panel.style.display = 'flex';
-      panel.classList.add('is-open');
-      var input = document.getElementById('jd-save-email');
-      if (input) setTimeout(function () { input.focus(); }, 100);
-    }
+    if (!panel) return;
+    var form = panel.querySelector('form');
+    var success = panel.querySelector('.w-form-done');
+    var emailInput = document.getElementById('jd-save-email');
+    var sendBtn = document.getElementById('jd-save-send');
+    if (form) form.style.display = '';
+    if (success) success.style.display = 'none';
+    if (emailInput) emailInput.value = '';
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.value = 'Save Progress'; }
+    panel.style.display = 'flex';
+    setTimeout(function () { if (emailInput) emailInput.focus(); }, 100);
   }
 
   function closeModal() {
     var panel = document.getElementById('jd-save-panel');
-    if (panel) {
-      panel.classList.remove('is-open');
-      // Give CSS transition time to finish before hiding
-      setTimeout(function () {
-        if (!panel.classList.contains('is-open')) {
-          panel.style.display = 'none';
-        }
-      }, 300);
-    }
-    var input = document.getElementById('jd-save-email');
-    if (input) input.value = '';
+    if (panel) panel.style.display = 'none';
   }
 
-  // ── Save progress ─────────────────────────────────────────────────────────
-  async function handleSave(email) {
-    const formData = collectFormData();
-    const currentStep = getCurrentStep();
-    const response = await fetch(API_BASE + '/api/save-progress', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, formData, currentStep }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to save progress');
-    return result;
+  function showModalSuccess() {
+    var panel = document.getElementById('jd-save-panel');
+    if (!panel) return;
+    var form = panel.querySelector('form');
+    var success = panel.querySelector('.w-form-done');
+    if (form) form.style.display = 'none';
+    if (success) success.style.display = 'block';
   }
 
   // ── Resume from token ─────────────────────────────────────────────────────
@@ -167,9 +157,9 @@
     }
   }
 
-  // ── Wire everything up ────────────────────────────────────────────────────
+  // ── Boot ──────────────────────────────────────────────────────────────────
   function init() {
-    // Open modal when save triggers are clicked
+    // Open modal on trigger click
     document.querySelectorAll('[data-save-trigger]').forEach(function (link) {
       link.addEventListener('click', function (e) {
         e.preventDefault();
@@ -179,68 +169,63 @@
 
     // Close on X button
     var cancelBtn = document.getElementById('jd-save-cancel');
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        closeModal();
-      });
-    }
+    if (cancelBtn) cancelBtn.addEventListener('click', function (e) { e.preventDefault(); closeModal(); });
 
-    // Close on overlay click
+    // Close on overlay
     var overlay = document.getElementById('jd-save-overlay');
-    if (overlay) {
-      overlay.addEventListener('click', closeModal);
-    }
+    if (overlay) overlay.addEventListener('click', closeModal);
 
     // Close on Escape
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeModal();
-    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
-    // Intercept the Webflow form submission
-    var saveForm = document.getElementById('jd-save-panel');
-    if (saveForm) {
-      var form = saveForm.querySelector('form');
-      if (form) {
-        form.addEventListener('submit', async function (e) {
-          e.preventDefault();
-          e.stopPropagation();
+    // Intercept the send button click before the form submits
+    var sendBtn = document.getElementById('jd-save-send');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', async function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
-          var emailInput = document.getElementById('jd-save-email');
-          var sendBtn = document.getElementById('jd-save-send');
-          var email = emailInput ? emailInput.value.trim() : '';
+        var emailInput = document.getElementById('jd-save-email');
+        var email = emailInput ? emailInput.value.trim() : '';
 
-          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            if (emailInput) emailInput.style.borderColor = '#e74c3c';
-            return;
-          }
-          if (emailInput) emailInput.style.borderColor = '';
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          if (emailInput) { emailInput.style.borderColor = '#e74c3c'; emailInput.focus(); }
+          return;
+        }
+        if (emailInput) emailInput.style.borderColor = '';
 
-          if (sendBtn) {
-            sendBtn.disabled = true;
-            sendBtn.value = 'Sending…';
-          }
+        sendBtn.disabled = true;
+        sendBtn.value = 'Sending…';
 
-          try {
-            await handleSave(email);
-            // Show Webflow success state
-            if (form) form.style.display = 'none';
-            var successMsg = saveForm.querySelector('.success-message, .w-form-done');
-            if (successMsg) successMsg.style.display = 'block';
-          } catch (err) {
-            if (sendBtn) {
-              sendBtn.disabled = false;
-              sendBtn.value = 'Save Progress';
-            }
-            showToast('⚠ ' + (err.message || 'Something went wrong. Please try again.'), 'error');
-          }
-        });
-      }
+        try {
+          const formData = collectFormData();
+          const currentStep = getCurrentStep();
+
+          const response = await fetch(API_BASE + '/api/save-progress', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, formData, currentStep }),
+          });
+
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || 'Failed to save progress');
+
+          showModalSuccess();
+        } catch (err) {
+          sendBtn.disabled = false;
+          sendBtn.value = 'Save Progress';
+          showToast('⚠ ' + (err.message || 'Something went wrong. Please try again.'), 'error');
+        }
+      }, true); // capture:true fires before everything else
     }
 
     checkForResumeToken();
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
 })();
