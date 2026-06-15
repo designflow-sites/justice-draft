@@ -3,7 +3,6 @@
 
   const API_BASE = 'https://justice-draft-save-progress.vercel.app';
 
-  // ── Collect all main form field values ────────────────────────────────────
   function collectFormData() {
     const data = {};
     document.querySelectorAll(
@@ -23,7 +22,6 @@
     return data;
   }
 
-  // ── Get the currently visible step index ──────────────────────────────────
   function getCurrentStep() {
     const steps = document.querySelectorAll('[data-form="step"]');
     for (let i = 0; i < steps.length; i++) {
@@ -35,7 +33,6 @@
     return 0;
   }
 
-  // ── Restore saved form data ────────────────────────────────────────────────
   function restoreFormData(formData) {
     Object.entries(formData).forEach(function ([name, value]) {
       const textEl = document.querySelector(
@@ -72,7 +69,6 @@
     });
   }
 
-  // ── Navigate to a specific step ───────────────────────────────────────────
   function goToStep(targetIndex) {
     const steps = document.querySelectorAll('[data-form="step"]');
     if (!steps.length) return;
@@ -88,7 +84,6 @@
     }
   }
 
-  // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(message, type) {
     const existing = document.getElementById('jd-toast');
     if (existing) existing.remove();
@@ -105,7 +100,6 @@
     }, 4000);
   }
 
-  // ── Modal open/close ──────────────────────────────────────────────────────
   function openModal() {
     var panel = document.getElementById('jd-save-panel');
     if (!panel) return;
@@ -135,7 +129,6 @@
     if (success) success.style.display = 'block';
   }
 
-  // ── Resume from token ─────────────────────────────────────────────────────
   async function checkForResumeToken() {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('resume');
@@ -157,75 +150,64 @@
     }
   }
 
-  // ── Boot ──────────────────────────────────────────────────────────────────
-  function init() {
-    // Open modal on trigger click
-    document.querySelectorAll('[data-save-trigger]').forEach(function (link) {
-      link.addEventListener('click', function (e) {
-        e.preventDefault();
-        openModal();
-      });
-    });
-
-    // Close on X button
-    var cancelBtn = document.getElementById('jd-save-cancel');
-    if (cancelBtn) cancelBtn.addEventListener('click', function (e) { e.preventDefault(); closeModal(); });
-
-    // Close on overlay
-    var overlay = document.getElementById('jd-save-overlay');
-    if (overlay) overlay.addEventListener('click', closeModal);
-
-    // Close on Escape
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
-
-    // Intercept the send button click before the form submits
-    var sendBtn = document.getElementById('jd-save-send');
-    if (sendBtn) {
-      sendBtn.addEventListener('click', async function (e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        var emailInput = document.getElementById('jd-save-email');
-        var email = emailInput ? emailInput.value.trim() : '';
-
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          if (emailInput) { emailInput.style.borderColor = '#e74c3c'; emailInput.focus(); }
-          return;
-        }
-        if (emailInput) emailInput.style.borderColor = '';
-
-        sendBtn.disabled = true;
-        sendBtn.value = 'Sending…';
-
-        try {
-          const formData = collectFormData();
-          const currentStep = getCurrentStep();
-
-          const response = await fetch(API_BASE + '/api/save-progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, formData, currentStep }),
-          });
-
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error || 'Failed to save progress');
-
-          showModalSuccess();
-        } catch (err) {
-          sendBtn.disabled = false;
-          sendBtn.value = 'Save Progress';
-          showToast('⚠ ' + (err.message || 'Something went wrong. Please try again.'), 'error');
-        }
-      }, true); // capture:true fires before everything else
+  // Use event delegation on document — works regardless of when modal appears in DOM
+  document.addEventListener('click', async function (e) {
+    // Save trigger links — open modal
+    if (e.target.closest('[data-save-trigger]')) {
+      e.preventDefault();
+      openModal();
+      return;
     }
 
-    checkForResumeToken();
-  }
+    // Cancel button or overlay — close modal
+    if (e.target.closest('#jd-save-cancel') || e.target.id === 'jd-save-overlay') {
+      e.preventDefault();
+      closeModal();
+      return;
+    }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+    // Send button — intercept before form submits
+    if (e.target.closest('#jd-save-send')) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      var emailInput = document.getElementById('jd-save-email');
+      var sendBtn = document.getElementById('jd-save-send');
+      var email = emailInput ? emailInput.value.trim() : '';
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (emailInput) { emailInput.style.borderColor = '#e74c3c'; emailInput.focus(); }
+        return;
+      }
+      if (emailInput) emailInput.style.borderColor = '';
+
+      sendBtn.disabled = true;
+      sendBtn.value = 'Sending…';
+
+      try {
+        const formData = collectFormData();
+        const currentStep = getCurrentStep();
+
+        const response = await fetch(API_BASE + '/api/save-progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, formData, currentStep }),
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to save progress');
+
+        showModalSuccess();
+      } catch (err) {
+        sendBtn.disabled = false;
+        sendBtn.value = 'Save Progress';
+        showToast('⚠ ' + (err.message || 'Something went wrong. Please try again.'), 'error');
+      }
+    }
+  }, true); // capture:true — fires before Webflow's handlers
+
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  checkForResumeToken();
 
 })();
