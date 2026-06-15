@@ -1,9 +1,3 @@
-<!-- 
-  Justice Draft — Save Progress Script
-  Add this to: Webflow → Start Your Statement page → Page Settings → Before </body> tag
-  BEFORE PUBLISHING: replace https://justice-draft-save-progress.vercel.app with your actual Vercel deployment URL
-  e.g. https://justice-draft-api.vercel.app
--->
 (function () {
   'use strict';
   // ─── CONFIG ───────────────────────────────────────────────────────────────
