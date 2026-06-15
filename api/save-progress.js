@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to save progress. Please try again.' });
   }
 
-  const resumeUrl = `https://www.justice-draft.com/start-your-statement?resume=${token}`;
+  const resumeUrl = `https://justice-draft.webflow.io/start-your-statement?resume=${token}`;
 
   const { error: emailError } = await resend.emails.send({
     from: 'Justice Draft <noreply@resend.dev>',
@@ -127,7 +127,7 @@ export default async function handler(req, res) {
 
   // If it was a Webflow form submission, redirect to a success page or back
   if (contentType.includes('application/x-www-form-urlencoded')) {
-    return res.redirect(302, '/start-your-statement?saved=true');
+    return res.redirect(302, 'https://justice-draft.webflow.io/start-your-statement?saved=true');
   }
 
   return res.status(200).json({ success: true });
