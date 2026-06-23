@@ -1,6 +1,5 @@
 // api/get-progress.js
 // Vercel serverless function — looks up a resume token and returns saved form data
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -9,11 +8,6 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // CORS
   const allowedOrigins = [
     'https://www.justicedraft.com.au',
     'https://justicedraft.com.au',
@@ -26,8 +20,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle preflight FIRST before any method checks
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const { token } = req.query;
