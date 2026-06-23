@@ -78,11 +78,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to save progress. Please try again.' });
   }
 
-  // Use the real domain now that it's connected in Webflow
   const resumeUrl = `https://www.justicedraft.com.au/start-your-statement?resume=${token}`;
 
   const { error: emailError } = await resend.emails.send({
-    from: 'Justice Draft <noreply@resend.dev>', // ← update to noreply@justicedraft.com.au once domain verified in Resend
+    from: 'Justice Draft <noreply@justicedraft.com.au>',
     to: email,
     subject: "Your statement is saved — continue when you're ready",
     html: `
