@@ -78,10 +78,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to save progress. Please try again.' });
   }
 
-  const resumeUrl = `https://justice-draft.webflow.io/start-your-statement?resume=${token}`;
+  // Use the real domain now that it's connected in Webflow
+  const resumeUrl = `https://www.justicedraft.com.au/start-your-statement?resume=${token}`;
 
   const { error: emailError } = await resend.emails.send({
-    from: 'Justice Draft <noreply@resend.dev>',
+    from: 'Justice Draft <noreply@resend.dev>', // ← update to noreply@justicedraft.com.au once domain verified in Resend
     to: email,
     subject: "Your statement is saved — continue when you're ready",
     html: `
@@ -123,7 +124,7 @@ export default async function handler(req, res) {
   }
 
   if (contentType.includes('application/x-www-form-urlencoded')) {
-    return res.redirect(302, 'https://justice-draft.webflow.io/start-your-statement?saved=true');
+    return res.redirect(302, 'https://www.justicedraft.com.au/start-your-statement?saved=true');
   }
 
   return res.status(200).json({ success: true });
