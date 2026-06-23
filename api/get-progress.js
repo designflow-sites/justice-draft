@@ -15,7 +15,8 @@ export default async function handler(req, res) {
 
   // CORS
   const allowedOrigins = [
-    'https://www.justice-draft.com',
+    'https://www.justicedraft.com.au',
+    'https://justicedraft.com.au',
     'https://justice-draft.webflow.io',
   ];
   const origin = req.headers.origin;
