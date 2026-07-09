@@ -72,7 +72,7 @@ export default async function handler(req, res) {
     ]);
 
     await resend.emails.send({
-      from: "Justice Draft <statements@yourdomain.com>",
+      from: "Justice Draft <statements@justicedraft.com.au>",
       to: recipientEmail,
       subject: "Your Victim Impact Statement",
       html: "<p>Attached is a copy of your completed Victim Impact Statement, in both Word and PDF formats. Please print, sign, and date the declaration page by hand, and initial each page.</p>",
