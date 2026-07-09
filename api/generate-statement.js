@@ -1,20 +1,15 @@
 import { Resend } from "resend";
 import { buildDocxBuffer } from "../lib/buildDocx.js";
-import { buildPdfBuffer } from "../lib/buildPdf.js";
+import { convertDocxToPdf } from "../lib/buildPdf.js";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Maps the field names Webflow's "Statement Form" actually uses to the
-// internal keys buildDocx.js / buildPdf.js expect. Confirmed against the
-// live site on 2026-07-08 — Questions 01-10 run in the same order as the
-// template's sections. There is currently no "Matter number" field on the
-// live form, so matter_number will always come through empty (which is
-// fine — the generator already hides empty general-info lines).
-//
-// IMPORTANT: this assumes Webflow's webhook payload uses these exact
-// display names as JSON keys. Confirm this on the first real test
-// submission and adjust the keys on the left below if the real payload
-// differs (see the walkthrough notes on checking Vercel function logs).
+// internal keys buildDocx.js expects. Confirmed against the live site on
+// 2026-07-08 — Questions 01-10 run in the same order as the template's
+// sections. There is currently no "Matter number" field on the live form,
+// so matter_number will always come through empty (which is fine — the
+// generator already hides empty general-info lines).
 const WEBFLOW_FIELD_MAP = {
   "Full Name": "name",
   "Email": "email",
@@ -47,17 +42,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  // Shared-secret check. Set this same value as a query param on the
-  // webhook URL you paste into Webflow, e.g.
-  // https://yourapp.vercel.app/api/generate-statement?key=XXXX
   if (req.query.key !== process.env.WEBHOOK_SHARED_SECRET) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
-    // Webflow's "Form Submission" webhook payload nests the actual
-    // field data under payload.data — adjust this line if your field
-    // names come through differently (log req.body once to confirm).
     const rawPayload = req.body?.payload?.data ?? req.body;
     const answers = translateWebflowPayload(rawPayload);
 
@@ -66,10 +55,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No recipient email in submission" });
     }
 
-    const [docxBuffer, pdfBuffer] = await Promise.all([
-      buildDocxBuffer(answers),
-      buildPdfBuffer(answers),
-    ]);
+    // Build the DOCX first, then convert that exact file to PDF —
+    // guarantees both attachments match, and avoids running a headless
+    // browser inside this function.
+    const docxBuffer = await buildDocxBuffer(answers);
+    const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     await resend.emails.send({
       from: "Justice Draft <statements@justicedraft.com.au>",
