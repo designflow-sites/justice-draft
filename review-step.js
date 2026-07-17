@@ -59,8 +59,8 @@
       if (!hasAnswer(value)) return;
       html +=
         '<div class="jd-review-item" style="margin-bottom:24px;">' +
-        '<div style="font-weight:600;color:#000080;margin-bottom:4px;">' + escapeHtml(label) + '</div>' +
-        '<div style="white-space:pre-wrap;line-height:1.5;">' + escapeHtml(value.trim()) + '</div>' +
+        '<div style="font-size:1rem;font-weight:600;color:#20524b;margin-bottom:4px;">' + escapeHtml(label) + '</div>' +
+        '<div style="font-size:0.875rem;font-weight:400;color:#3a4448;white-space:pre-wrap;line-height:1.5;">' + escapeHtml(value.trim()) + '</div>' +
         '</div>';
     });
     if (!html) {
