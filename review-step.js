@@ -58,7 +58,7 @@
       const value = formData[fieldName];
       if (!hasAnswer(value)) return;
       html +=
-        '<div class="jd-review-item" style="margin-bottom:24px;">' +
+        '<div class="jd-review-item" style="margin-bottom:1.5rem;">' +
         '<div style="font-size:1rem;font-weight:600;color:#20524b;margin-bottom:0.125rem;">' + escapeHtml(label) + '</div>' +
         '<div style="font-size:0.875rem;font-weight:400;color:#3a4448;white-space:pre-wrap;line-height:1.6;">' + escapeHtml(value.trim()) + '</div>' +
         '</div>';
