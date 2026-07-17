@@ -55,17 +55,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "No recipient email in submission" });
     }
 
-    // Build the DOCX first, then convert that exact file to PDF —
-    // guarantees both attachments match, and avoids running a headless
-    // browser inside this function.
     const docxBuffer = await buildDocxBuffer(answers);
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     await resend.emails.send({
       from: "Justice Draft <statements@justicedraft.com.au>",
       to: recipientEmail,
-      subject: "Your Victim Impact Statement",
-      html: "<p>Attached is a copy of your completed Victim Impact Statement, in both Word and PDF formats. Please print, sign, and date the declaration page by hand, and initial each page.</p>",
+      subject: "Your impact statement",
+      html: `
+        <p>Your completed Victim Impact Statement is attached, in Word and PDF. Before you submit it, print it, sign and date the declaration page by hand, and initial each page at the bottom. If anything needs changing, open the Word version, make your edits there, and print that copy instead.</p>
+        <p>You did the hard part. Every word in this statement is yours. What happens next with your statement is your choice.</p>
+      `,
       attachments: [
         { filename: "victim-impact-statement.docx", content: docxBuffer.toString("base64") },
         { filename: "victim-impact-statement.pdf", content: pdfBuffer.toString("base64") },
