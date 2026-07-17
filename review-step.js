@@ -1,24 +1,25 @@
 (function () {
   'use strict';
 
-  // Keep this label order/wording in sync with SECTIONS + GENERAL_INFO in
-  // lib/statementFields.js on the backend, so the review preview matches
-  // the final document's section headings.
+  // These keys match the actual HTML name attributes Webflow renders for
+  // this form (hyphenated), confirmed via live inspection on 2026-07-17 —
+  // NOT the same as the space-separated names in the backend's webhook
+  // field mapping, which Webflow normalizes separately for the payload.
   const FIELD_LABELS = [
-    ['Full Name', 'Name'],
-    ['Type of Offense', 'Type of offence'],
-    ['When it Happened', 'When the harm occurred'],
-    ['Name of Offender', 'Name of offender'],
-    ['Question 01', 'How I felt at the time'],
-    ['Question 02', 'Emotional wellbeing'],
-    ['Question 03', 'Relationships'],
-    ['Question 04', 'Physical health'],
-    ['Question 05', 'Financial impact'],
-    ['Question 06', 'Daily life and routine'],
-    ['Question 07', 'Sense of safety'],
-    ['Question 08', 'Spiritual and cultural wellbeing'],
-    ['Question 09', 'Who I was before this happened'],
-    ['Question 10', 'What I want the court or assessor to know'],
+    ['Full-Name', 'Name'],
+    ['Type-of-Offense', 'Type of offence'],
+    ['When-it-Happened', 'When the harm occurred'],
+    ['Name-of-Offender', 'Name of offender'],
+    ['Question-01', 'How I felt at the time'],
+    ['Question-02', 'Emotional wellbeing'],
+    ['Question-03', 'Relationships'],
+    ['Question-04', 'Physical health'],
+    ['Question-05', 'Financial impact'],
+    ['Question-06', 'Daily life and routine'],
+    ['Question-07', 'Sense of safety'],
+    ['Question-08', 'Spiritual and cultural wellbeing'],
+    ['Question-09', 'Who I was before this happened'],
+    ['Question-10', 'What I want the court or assessor to know'],
   ];
 
   function escapeHtml(str) {
@@ -80,9 +81,6 @@
     return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
   }
 
-  // Poll for the review step becoming visible, same lightweight pattern
-  // used elsewhere in this form for step-tracking. Only re-populates on
-  // the hidden -> visible transition, not on every tick.
   let wasVisible = false;
   setInterval(function () {
     const reviewStep = document.querySelector('[data-review-step="true"]');
